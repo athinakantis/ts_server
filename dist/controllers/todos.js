@@ -2,36 +2,37 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeToDo = exports.updateToDo = exports.getToDos = exports.createTodo = void 0;
 const todos_1 = require("../models/todos");
-const TODOS = [];
+const app_1 = require("../app");
 const createTodo = (req, res, next) => {
     const text = req.body.text;
     const newToDo = new todos_1.Todo(Math.random().toString(), text);
-    TODOS.push(newToDo);
+    app_1.db.collection('todos').insertOne(newToDo);
     res.status(201).json({ message: 'Create todo', createTodo: newToDo });
 };
 exports.createTodo = createTodo;
 const getToDos = (req, res, next) => {
-    res.status(201).json({ todos: TODOS });
+    const todos = app_1.db.collection('todos').find({});
+    res.json({ todos: todos });
 };
 exports.getToDos = getToDos;
 const updateToDo = (req, res, next) => {
     const toDoId = req.params.id;
     const updatedText = req.body.text;
-    const toDoIndex = TODOS.findIndex(todo => todo.id === toDoId);
-    if (toDoIndex < 0) {
-        throw new Error('To-do not found');
+    const toDoToUpdate = app_1.db.collection('todos').find({ id: toDoId });
+    if (!toDoToUpdate) {
+        res.status(500).json({ message: 'Could not find to-do' });
     }
-    TODOS[toDoIndex] = new todos_1.Todo(TODOS[toDoIndex].id, updatedText);
-    res.json({ message: 'Updated todos', updateToDo: TODOS[toDoIndex] });
+    const updatedToDo = new todos_1.Todo(toDoId, updatedText);
+    res.json({ message: 'Updated todos', updateToDo: updatedToDo });
 };
 exports.updateToDo = updateToDo;
 const removeToDo = (req, res, next) => {
     const toDoId = req.params.id;
-    const toDoIndex = TODOS.findIndex(todo => todo.id === toDoId);
-    if (toDoIndex < 0) {
-        res.status(500).json({ message: 'To-do not found' });
+    const toDoToUpdate = app_1.db.collection('todos').find({ id: toDoId });
+    if (!toDoToUpdate) {
+        res.status(500).json({ message: 'Could not find to-do' });
     }
-    TODOS.splice(toDoIndex, 1);
+    app_1.db.deleteOne({ id: toDoId });
     res.json({ message: 'To-do has been removed' });
 };
 exports.removeToDo = removeToDo;
